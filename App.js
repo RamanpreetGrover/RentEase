@@ -1,25 +1,64 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
 
-import HomeScreen from "./screens/HomeScreen";
+import Dashboard from "./screens/HomeScreen"; // rename later to Dashboard.js
 import OnboardingScreen from "./screens/OnboardingScreen";
 import RentTrackerScreen from "./screens/RentTrackerScreen";
 import MaintenanceScreen from "./screens/MaintenanceScreen";
 import HelpScreen from "./screens/HelpScreen";
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="Rent Tracker" component={RentTrackerScreen} />
-        <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
-        <Stack.Screen name="Help" component={HelpScreen} />
-      </Stack.Navigator>
+      <Tab.Navigator
+        initialRouteName="Dashboard"
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color, size }) => {
+            let iconName;
+
+            switch (route.name) {
+              case "Onboarding":
+                iconName = "document-text-outline";
+                break;
+              case "Rent":
+                iconName = "cash-outline";
+                break;
+              case "Dashboard":
+                iconName = "home-outline";
+                break;
+              case "Maintenance":
+                iconName = "construct-outline";
+                break;
+              case "Help":
+                iconName = "help-circle-outline";
+                break;
+            }
+
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: "#5AF480",
+          tabBarInactiveTintColor: "#888",
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: "#F8F7F9",
+            height: 70,
+            paddingBottom: 10,
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+          },
+        })}
+      >
+        <Tab.Screen name="Onboarding" component={OnboardingScreen} />
+        <Tab.Screen name="Rent" component={RentTrackerScreen} />
+        <Tab.Screen name="Dashboard" component={Dashboard} />
+        <Tab.Screen name="Maintenance" component={MaintenanceScreen} />
+        <Tab.Screen name="Help" component={HelpScreen} />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
