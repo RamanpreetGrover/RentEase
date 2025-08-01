@@ -1,72 +1,135 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { db } from '../firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import { db } from "../firebaseConfig";
+import { collection, getDocs } from "firebase/firestore";
+import styles, { COLORS } from "../styles/styles";
 
-const RentTrackerScreen = () => {
+export default function RentTrackerScreen() {
   const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // This function fetches rent data from the Firebase Firestore
   const fetchRentPayments = async () => {
     try {
-      const rentCollection = collection(db, 'rentPayments');
+      const rentCollection = collection(db, "rentPayments");
       const snapshot = await getDocs(rentCollection);
-      const data = snapshot.docs.map(doc => doc.data());
-      setPayments(data); // Save data to state
+      const data = snapshot.docs.map((doc) => doc.data());
+      setPayments(data);
     } catch (error) {
       console.error("Error fetching rent data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Fetch rent data when the screen loads
   useEffect(() => {
     fetchRentPayments();
   }, []);
 
-  // Each item in the FlatList will display tenant name, amount, and status
   const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
-      <Text style={styles.name}>{item.tenantName}</Text>
-      <Text>Month: {item.month}</Text>
-      <Text>Amount: ${item.amount}</Text>
-      <Text>Status: {item.status}</Text>
+    <View style={rentStyles.card}>
+      <View style={rentStyles.cardLeft}>
+        <Text style={rentStyles.tenant}>{item.tenantName}</Text>
+        <Text style={rentStyles.month}>{item.month}</Text>
+      </View>
+      <View style={rentStyles.cardRight}>
+        <Text style={rentStyles.amount}>${item.amount}</Text>
+        <View
+          style={[
+            rentStyles.statusChip,
+            {
+              backgroundColor:
+                item.status === "Paid"
+                  ? "#d4f8e8"
+                  : item.status === "Overdue"
+                  ? "#fdecea"
+                  : "#fff4cc",
+            },
+          ]}
+        >
+          <Text
+            style={{
+              color:
+                item.status === "Paid"
+                  ? "green"
+                  : item.status === "Overdue"
+                  ? "#e53935"
+                  : "#e6ac00",
+              fontWeight: "bold",
+              fontSize: 12,
+            }}
+          >
+            {item.status}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Rent Payment History</Text>
-      <FlatList
-        data={payments}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={renderItem}
-      />
+      <Text style={styles.title}>Rent Payments</Text>
+
+      {loading ? (
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      ) : (
+        <FlatList
+          data={payments}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        />
+      )}
     </View>
   );
-};
+}
 
-// Styling for the screen
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+const rentStyles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "90%",
+    backgroundColor: "#fff",
     padding: 20,
-    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 15,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
-  heading: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 12,
+  cardLeft: {
+    flexDirection: "column",
   },
-  itemContainer: {
-    backgroundColor: '#eee',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+  cardRight: {
+    alignItems: "flex-end",
   },
-  name: {
-    fontWeight: 'bold',
+  tenant: {
     fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.secondary,
+  },
+  month: {
+    fontSize: 14,
+    color: "#777",
+    marginTop: 4,
+  },
+  amount: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.secondary,
+    marginBottom: 6,
+  },
+  statusChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
 });
-
-export default RentTrackerScreen;

@@ -1,47 +1,38 @@
 import React from "react";
-import { View, Text, ScrollView } from "react-native";
-import styles, { COLORS } from "../styles/styles";
-import CustomButton from "../components/CustomButton";
+import { View, Text, StyleSheet } from "react-native";
+import styles from "../styles/styles";
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen() {
   return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { justifyContent: "flex-start" },
-      ]}
-    >
-      <Text style={styles.title}>Welcome to RentEase</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Dashboard</Text>
 
-      <Text style={styles.sectionTitle}>Features</Text>
-
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          title="Onboarding Checklist"
-          onPress={() => navigation.navigate("Onboarding")}
-        />
+      <View style={dashboardStyles.card}>
+        <Text style={styles.text}>3 onboarding tasks pending</Text>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          title="Rent Tracker"
-          onPress={() => navigation.navigate("Rent Tracker")}
-        />
+      <View style={dashboardStyles.card}>
+        <Text style={styles.text}>2 rent payments due</Text>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          title="Maintenance Request"
-          onPress={() => navigation.navigate("Maintenance")}
-        />
+      <View style={dashboardStyles.card}>
+        <Text style={styles.text}>1 maintenance ticket open</Text>
       </View>
-
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          title="Help & Support"
-          onPress={() => navigation.navigate("Help")}
-        />
-      </View>
-    </ScrollView>
+    </View>
   );
 }
+
+const dashboardStyles = StyleSheet.create({
+  card: {
+    width: "90%",
+    padding: 20,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    marginVertical: 10,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+});
