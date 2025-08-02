@@ -1,22 +1,42 @@
+
+// Loads TED fonts and sets up tab-based navigation for RentEase
+
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import AppLoading from "expo-app-loading";
+import { useFonts } from "expo-font";
 
-import Dashboard from "./screens/HomeScreen"; // rename later to Dashboard.js
+// Screens
+import Dashboard from "./screens/HomeScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import RentTrackerScreen from "./screens/RentTrackerScreen";
 import MaintenanceScreen from "./screens/MaintenanceScreen";
 import HelpScreen from "./screens/HelpScreen";
 
+// Set up tab navigation
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+  // Load TED font files from assets/fonts
+  const [fontsLoaded] = useFonts({
+    "TedNext-Regular": require("./assets/fonts/TedNext-Regular.otf"),
+    "TedNext-Bold": require("./assets/fonts/TedNext-Bold.otf"),
+    "TedNext-Italic": require("./assets/fonts/TedNext-Italic.otf"), // optional
+  });
+
+  // Splash while fonts are loading
+  if (!fontsLoaded) {
+    return <AppLoading />;
+  }
+
   return (
     <NavigationContainer>
       <Tab.Navigator
         initialRouteName="Dashboard"
         screenOptions={({ route }) => ({
+          // Assign an icon for each tab
           tabBarIcon: ({ color, size }) => {
             let iconName;
 
@@ -50,6 +70,7 @@ export default function App() {
           },
           tabBarLabelStyle: {
             fontSize: 12,
+            fontFamily: "TedNext-Regular", // apply font to tab labels
           },
         })}
       >

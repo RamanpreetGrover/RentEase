@@ -1,3 +1,7 @@
+// HelpScreen.js
+// This screen displays landlord help resources from an API, and includes
+// interactive buttons for Chat Support and Live Agent, matching the app's layout.
+
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,41 +14,55 @@ import {
   UIManager,
   Platform,
   FlatList,
+  Modal,
+  TextInput,
+  Alert,
+  ImageBackground,
 } from "react-native";
 import styles, { COLORS } from "../styles/styles";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+// Enable layout animations on Android
 if (Platform.OS === "android") {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export default function HelpScreen() {
+  // API and dropdown states
   const [helpSections, setHelpSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedIndex, setExpandedIndex] = useState(null);
 
+  // Chat modal states
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMsg, setChatMsg] = useState("");
+
   const API_URL = "https://mockfast.io/backend/apitemplate/get/WY0FUFAFMZ";
 
-  const fetchResources = async () => {
-    try {
-      const res = await fetch(API_URL);
-      const json = await res.json();
-      setHelpSections(json);
-    } catch (error) {
-      console.error("Failed to fetch help resources:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch resources on mount
   useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const res = await fetch(API_URL);
+        const json = await res.json();
+        setHelpSections(json);
+      } catch (error) {
+        console.error("Failed to fetch help resources:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchResources();
   }, []);
 
+  // Toggle open/close state for dropdown
   const toggleExpand = (index) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedIndex(expandedIndex === index ? null : index);
   };
 
+  // Render each link in a category
   const renderResources = (resources) =>
     resources.map((item, idx) => (
       <TouchableOpacity
@@ -56,51 +74,121 @@ export default function HelpScreen() {
       </TouchableOpacity>
     ));
 
+  // Handle chat submission
+  const handleSend = () => {
+    if (!chatMsg.trim()) {
+      Alert.alert("Empty", "Please enter a message.");
+      return;
+    }
+    Alert.alert("Sent", "Your message has been sent!");
+    setChatMsg("");
+    setChatOpen(false);
+  };
+
+  // Handle live agent popup
+  const handleLiveAgent = () => {
+    Alert.alert(
+      "Live Agent",
+      "Call us at 1-800-RENT-EZ or email help@rentease.com"
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Helpful Landlord Resources</Text>
+    <ImageBackground
+      source={require("../assets/background.jpg")}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={[styles.container, { backgroundColor: "transparent" }]}>
+          {/* Page title */}
+          <Text style={styles.title}>Helpful Landlord Resources</Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      ) : (
-        <FlatList
-          data={helpSections}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item, index }) => (
-            <View style={dropdownStyles.section}>
-              <TouchableOpacity
-                style={dropdownStyles.dropdownHeader}
-                onPress={() => toggleExpand(index)}
-              >
-                <Text style={dropdownStyles.dropdownTitle}>
-                  {item.category}
-                </Text>
-                <Text style={{ color: COLORS.secondary }}>
-                  {expandedIndex === index ? "▲" : "▼"}
-                </Text>
-              </TouchableOpacity>
-              {expandedIndex === index && renderResources(item.resources)}
-            </View>
+          {/* Loading spinner or dropdown content */}
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          ) : (
+            <FlatList
+              data={helpSections}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item, index }) => (
+                <View style={dropdownStyles.section}>
+                  <TouchableOpacity
+                    style={dropdownStyles.dropdownHeader}
+                    onPress={() => toggleExpand(index)}
+                  >
+                    <Text style={dropdownStyles.dropdownTitle}>
+                      {item.category}
+                    </Text>
+                    <Text style={{ color: COLORS.secondary }}>
+                      {expandedIndex === index ? "▲" : "▼"}
+                    </Text>
+                  </TouchableOpacity>
+                  {expandedIndex === index && renderResources(item.resources)}
+                </View>
+              )}
+            />
           )}
-        />
-      )}
 
-      {/* Horizontal Button Row */}
-      <View style={quickStyles.quickActions}>
-        <TouchableOpacity style={quickStyles.actionBtn}>
-          <Text style={quickStyles.actionIcon}>💬</Text>
-          <Text style={quickStyles.actionLabel}>Chat Support</Text>
-        </TouchableOpacity>
+          {/* Quick Action Buttons */}
+          <View style={quickStyles.quickActions}>
+            {/* Chat Button */}
+            <TouchableOpacity
+              style={quickStyles.actionBtn}
+              onPress={() => setChatOpen(true)}
+            >
+              <Text style={quickStyles.actionIcon}>💬</Text>
+              <Text style={quickStyles.actionLabel}>Chat Support</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity style={quickStyles.actionBtn}>
-          <Text style={quickStyles.actionIcon}>👤</Text>
-          <Text style={quickStyles.actionLabel}>Live Agent</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            {/* Live Agent Button */}
+            <TouchableOpacity
+              style={quickStyles.actionBtn}
+              onPress={handleLiveAgent}
+            >
+              <Text style={quickStyles.actionIcon}>👤</Text>
+              <Text style={quickStyles.actionLabel}>Live Agent</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Chat Modal */}
+          <Modal visible={chatOpen} animationType="slide" transparent>
+            <View style={quickStyles.modalOverlay}>
+              <View style={quickStyles.modalContainer}>
+                <Text style={styles.sectionTitle}>Chat with Support</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Type your message..."
+                  value={chatMsg}
+                  onChangeText={setChatMsg}
+                />
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  <TouchableOpacity
+                    style={quickStyles.modalButton}
+                    onPress={handleSend}
+                  >
+                    <Text style={quickStyles.modalButtonText}>Send</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      quickStyles.modalButton,
+                      { backgroundColor: "#aaa" },
+                    ]}
+                    onPress={() => setChatOpen(false)}
+                  >
+                    <Text style={quickStyles.modalButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        </View>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
+// Dropdown styles
 const dropdownStyles = StyleSheet.create({
   section: {
     width: "90%",
@@ -132,6 +220,7 @@ const dropdownStyles = StyleSheet.create({
   },
 });
 
+// Button + modal styling
 const quickStyles = StyleSheet.create({
   quickActions: {
     flexDirection: "row",
@@ -162,5 +251,30 @@ const quickStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: COLORS.secondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    elevation: 10,
+    alignItems: "center",
+  },
+  modalButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    marginTop: 10,
+  },
+  modalButtonText: {
+    color: COLORS.background,
+    fontWeight: "bold",
   },
 });
