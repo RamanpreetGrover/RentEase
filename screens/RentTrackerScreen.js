@@ -1,53 +1,59 @@
 // RentTrackerScreen.js
-// This screen shows a summary of all tenant rent payments from Firestore,
-// styled to match the rest of the app's background and layout.
+// This screen fetches rent payment history from Firestore and uses Redux to store the state
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
   StyleSheet,
-  ImageBackground,
 } from "react-native";
-import { db } from "../firebaseConfig";
+import { useDispatch, useSelector } from "react-redux"; // Redux hooks
 import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebaseConfig"; // Firebase DB
 import styles, { COLORS } from "../styles/styles";
+
+// Redux actions
+import { setPayments, setLoading, setError } from "../redux/rentSlice";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RentTrackerScreen() {
-  const [payments, setPayments] = useState([]); // store rent data
-  const [loading, setLoading] = useState(true); // loading spinner
+  const dispatch = useDispatch(); // used to update Redux store
 
-  // This function fetches rent documents from Firestore
-  const fetchRentPayments = async () => {
-    try {
-      const rentCollection = collection(db, "rentPayments");
-      const snapshot = await getDocs(rentCollection);
-      const data = snapshot.docs.map((doc) => doc.data());
-      setPayments(data);
-    } catch (error) {
-      console.error("Error fetching rent data:", error);
-    } finally {
-      setLoading(false); // hide spinner
-    }
-  };
+  // select rent data from Redux store
+  const { payments, loading } = useSelector((state) => state.rent);
 
+  // fetch rent data from Firebase when screen loads
   useEffect(() => {
-    fetchRentPayments();
+    const fetchData = async () => {
+      dispatch(setLoading(true)); // show loader while fetching
+
+      try {
+        const rentCollection = collection(db, "rentPayments");
+        const snapshot = await getDocs(rentCollection);
+        const data = snapshot.docs.map((doc) => doc.data());
+
+        dispatch(setPayments(data)); // save to Redux
+      } catch (error) {
+        dispatch(setError("Failed to load rent data"));
+        console.error("Error fetching rent data:", error);
+      } finally {
+        dispatch(setLoading(false)); // hide loader
+      }
+    };
+
+    fetchData();
   }, []);
 
-  // Renders each rent item in a horizontal card
+  // UI for each rent payment card
   const renderItem = ({ item }) => (
     <View style={rentStyles.card}>
-      {/* Left side of card: name + month */}
       <View style={rentStyles.cardLeft}>
         <Text style={rentStyles.tenant}>{item.tenantName}</Text>
         <Text style={rentStyles.month}>{item.month}</Text>
       </View>
-
-      {/* Right side: amount + payment status */}
       <View style={rentStyles.cardRight}>
         <Text style={rentStyles.amount}>${item.amount}</Text>
         <View
@@ -83,34 +89,25 @@ export default function RentTrackerScreen() {
   );
 
   return (
-    // Use same background and layout as all other screens
-    <ImageBackground
-      source={require("../assets/background.jpg")}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={[styles.container, { backgroundColor: "transparent" }]}>
-          <Text style={styles.title}>Rent Payments</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Rent Payments</Text>
 
-          {/* Spinner while loading data */}
-          {loading ? (
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          ) : (
-            <FlatList
-              data={payments}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={renderItem}
-              contentContainerStyle={{ paddingBottom: 20 }}
-            />
-          )}
-        </View>
-      </SafeAreaView>
-    </ImageBackground>
+        {loading ? (
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        ) : (
+          <FlatList
+            data={payments}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
-// Custom styles for rent card layout
 const rentStyles = StyleSheet.create({
   card: {
     flexDirection: "row",
